@@ -8,20 +8,6 @@ random.seed(42)
 #l2 norm = sum( (yi-( f(xi))**2 ) for all i
 #frob norm = sqrt(sum i( sum j(aij**2)))
 
-def l2norm(input):
-    sum = 0
-    for inp in input:
-        for i in inp:
-            sum += i**2
-    return math.sqrt(sum)
-
-def frobNorm(input):
-    sum = 0
-    for inp in input:
-        for i in inp:
-            sum += i ** 2
-    return math.sqrt(sum)
-
 class fileRead:
     def __init__(self, file, testRatio):
         #Variable Initiation
@@ -29,21 +15,25 @@ class fileRead:
         self.fileName = file
 
         #Read data into dataset list, then find length of data
-        self.dataset, self.header = self.read()
-        self.length = len(self.dataset)        #Reads the file, then makes a list for each new line
         data = open(self.fileName, "r").read()
         data = data.split("\n")
-
+        self.dataset, self.headers = self.read(data)
+        self.length = len(self.dataset)        #Reads the file, then makes a list for each new line
 
         #Shuffle said list
         self.shuffleData()
 
+        self.train, self.test = self.splitTrainandTest()
+        # Split the data into testing/training labels and logits
+        self.trainLogit, self.trainLabel = self.labelLogit(self.train)
+        self.testLogit, self.testLabel = self.labelLogit(self.test)
 
-    def read(self):
+
+    def read(self, data):
 
         header = data.pop(0).split(",")
         #Creates the header, and dataset
-        dataset = [d.split(",") for d in data[1:]]
+        dataset = [d.split(",") for d in data]
 
         #Removes inevitable empty entry at the last entry
         del dataset[-1]
@@ -86,9 +76,10 @@ class backprop:
         return W1Change, W2Change
 
     def apply_gradients(self):
-        w1 = w1 - W1Change*self.lr
-        w2 = w2 - W1Change*self.lr
-        return w1, w2
+        # w1 = w1 - W1Change*self.lr
+        # w2 = w2 - W1Change*self.lr
+        # return w1, w2
+        pass
 
 
 
@@ -169,78 +160,77 @@ class SGD:
 
 
 class LinearNetwork:
-    def __init__(self, config):
+    def __init__(self, config, lambda1, lambda2):
         self.networkconfig = config
-        self.weights = self.weightsInit()
-        # self.bias = self.biasInit() #this does not seem to be in the optimization problem
-        # self.model = self.networkCreation()
+        self.weights = self.fullyConnectedWeights(config[0], config[1], config[2])
+        self.lambda1, self.lambda2 = lambda1, lambda2
 
-    def weightsInit(self):
-        weights = []
-        for a in range(len(self.networkconfig)): #15 values, predict 1 of them (bodyfat)
-            weights.append([])
-            for c in range(self.networkconfig[a][1]):
-                weights[-1].append([])
-                for d in range(self.networkconfig[a][0]):
-                    weights[-1][-1].append(random.random())
-        #
-        # for w in range(len(weights)):
-        #     for a in range(len(weights[w])):
-        #         for b in range(len(weights[w][a])):
-        #             weights[w][a][b] = random.random()
+    def fullyConnectedWeights(self, inShape, l1Shape, l2Shape):
+        weights = [[], []]
+        for a in range(l1Shape):
+            weights[0].append([])
+            for b in range(inShape):
+                weights[0][-1].append(random.random())
 
+        for c in range(l2Shape):
+            weights[1].append([])
+            for d in range(l1Shape):
+                weights[1][-1].append(random.random())
 
-
-        #when the network is created, associate weights with each "neuron"
         return weights
 
-    # def biasInit(self): #should we use bias, or just lambda1 and lambda2?
-    #     #CHECK THIS!!!!
-    #
-    #     bias = []
-    #     for a in range(len(self.networkconfig)):
-    #         bias.append([])
-    #         for b in range(len(self.networkconfig[a])):
-    #             bias[-1].append(random.random())
-    #     #same as weightsInit, but for bias
-    #     return bias
-
-    # def networkCreation(self):
-    #     network = []
-    #     for a in range(len(self.networkconfig)):
-    #         network.append([])
-    #         for b in range(len(self.networkconfig[a])):
-    #             network[-1].append([self.weights[a][b], self.bias[a][b]])
-    #     return network
 
     def fit(self, backprop, input):
         pass
         #Fit send the data in to the network, and do the activation and such
         #then use the backpropagation method, and so on
 
-    def predict(self, input):
-        pass
-        #Like with fit, without any form of backprop
+    def predict(self, inputy, ans):
+        prediction = self.forwardpass(inputy, ans)
+        return prediction
 
-    def forwardpass(self, input, l2norm, ans):
-        pass #take the input, and pass it through the weights of each layer
-        #call l2norm the tempOut
-        #call frob weights0 for bias1, and frob weights1 for bias2
-        #to make x2 the same shape as ans, we need to do global average pooling or something like it!!!
-        #if no globAvgPool is done, then the w2 shape needs to be the same as the output [1, 1]
-        output = l2norm(self.weights[1]*self.weights[0]*input - ans) + lambda1*frobNorm(self.weights[0]) + self.lambda2*frobNorm(self.weights[1])
+    def formula(self, inputy, weights, ans, lambda1, lambda2):
+        part1 = 0
+        for inp in inputy:
+            X1 = self.multiplication(inputy, weights[0])
+            X2 = self.multiplication(X1, weights[1])
+
+        return X1, X2
+
+    def multiplication(self, inputy, weight):
+        outy = [0]*len(weight)
+        print(len(inputy), len(weight), len(weight[0]))
+        for x in range(len(weight)): #len of input
+            for y in range(len(weight[x])): #len of weights
+                if len(weight)> 1:
+                    outy[x] += float(weight[x][y])*float(inputy[x])
+                else:
+                    outy[x] += float(weight[x][y])*float(inputy[y])
+        return outy
+
+    def forwardpass(self, inputy, ans):
+        return self.formula(inputy, self.weights, ans, self.lambda1, self.lambda2)
+
+    def l2norm(self, inputy, ans):
+        sum = 0
+        sum += (inputy - ans) ** 2
+        return math.sqrt(sum)
+
+    def frobNorm(self, inputy):
+        sum = 0
+        for inp in inputy:
+            for i in inp:
+                sum += i ** 2
+        return math.sqrt(sum)
+
 
 #Create an instance of the fileRead class
 x = fileRead("hw3 - dataset/Bodyfat.csv", 0.2)
 
-#Read the original file, and create the header and a dataset of said file
-file, header = x.read()
-
-#Split the data into testing/training labels and logits
-train, test = x.splitTrainandTest()
-trainLogit, trainLabel = x.labelLogit(train)
-testLogit, testLabel = x.labelLogit(test)
-
-network = LinearNetwork([[15, 2],[2, 15]])
+network = LinearNetwork([14, 10, 1], 0.1, 0.2)
 weight = network.weights
-
+# [print(f, end=", ") for f in x.train[0]]
+# print()
+[print(w) for w in weight]
+X1, X2 = network.formula(x.trainLogit[-1], weight, 0.1, 0.2)
+print(X2)
