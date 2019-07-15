@@ -2,8 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="1d0abe0b-0ed0-49dd-8f44-192503e7d2ef" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/HW2 part3.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.~lock.Homework 3.odt#" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.~lock.lossList.csv#" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/HW3.py" beforeDir="false" afterPath="$PROJECT_DIR$/HW3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/hw3 - dataset/.~lock.Bodyfat.csv#" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -13,16 +15,19 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file pinned="false" current-in-tab="false">
+      <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/HW3.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-1701">
-              <caret line="129" column="69" lean-forward="true" selection-start-line="129" selection-start-column="69" selection-end-line="129" selection-end-column="69" />
+            <state relative-caret-position="345">
+              <caret line="305" column="10" selection-start-line="305" selection-start-column="10" selection-end-line="305" selection-end-column="10" />
+              <folding>
+                <element signature="e#0#32#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/HW2 part3.py">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="105">
@@ -43,6 +48,11 @@
       </list>
     </option>
   </component>
+  <component name="FindInProjectRecents">
+    <findStrings>
+      <find>Trans</find>
+    </findStrings>
+  </component>
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
@@ -50,16 +60,15 @@
     <option name="CHANGED_PATHS">
       <list>
         <option value="$PROJECT_DIR$/HW2.py" />
-        <option value="$PROJECT_DIR$/HW3.py" />
         <option value="$PROJECT_DIR$/HW2 part3.py" />
+        <option value="$PROJECT_DIR$/HW3.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds" extendedState="6">
-    <option name="x" value="-581" />
     <option name="y" value="-4" />
-    <option name="width" value="1918" />
-    <option name="height" value="1020" />
+    <option name="width" value="1920" />
+    <option name="height" value="1021" />
   </component>
   <component name="ProjectView">
     <navigator proportions="" version="1">
@@ -97,7 +106,7 @@
       </list>
     </option>
   </component>
-  <component name="RunManager" selected="Python.HW2 part3">
+  <component name="RunManager" selected="Python.HW3">
     <configuration name="HW2 part3" type="PythonConfigurationType" factoryName="Python" temporary="true">
       <module name="IKT724 - Deep Learning" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -142,8 +151,8 @@
     </configuration>
     <recent_temporary>
       <list>
-        <item itemvalue="Python.HW2 part3" />
         <item itemvalue="Python.HW3" />
+        <item itemvalue="Python.HW2 part3" />
       </list>
     </recent_temporary>
   </component>
@@ -170,7 +179,7 @@
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info active="true" anchor="bottom" id="Run" order="2" visible="true" weight="0.32897604" />
-      <window_info anchor="bottom" id="Debug" order="3" weight="0.39918947" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.39869282" />
       <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
       <window_info anchor="bottom" id="TODO" order="6" />
@@ -183,21 +192,40 @@
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
     </layout>
   </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/HW3.py</url>
+          <line>248</line>
+          <option name="timeStamp" value="6" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/HW3.py</url>
+          <line>217</line>
+          <option name="timeStamp" value="12" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
   <component name="editorHistoryManager">
     <entry file="file://$USER_HOME$/.local/lib/python3.5/site-packages/tensorflow/_api/v1/layers/__init__.py" />
-    <entry file="file://$PROJECT_DIR$/HW3.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-1701">
-          <caret line="129" column="69" lean-forward="true" selection-start-line="129" selection-start-column="69" selection-end-line="129" selection-end-column="69" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/HW2 part3.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="105">
           <caret line="7" column="25" selection-start-line="7" selection-start-column="25" selection-end-line="7" selection-end-column="25" />
           <folding>
             <element signature="e#0#15#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/HW3.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="345">
+          <caret line="305" column="10" selection-start-line="305" selection-start-column="10" selection-end-line="305" selection-end-column="10" />
+          <folding>
+            <element signature="e#0#32#0" expanded="true" />
           </folding>
         </state>
       </provider>

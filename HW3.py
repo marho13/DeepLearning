@@ -1,12 +1,11 @@
 import re, sys, os, math, random
+import numpy as np
 import tensorflow as tf
+from sklearn.metrics import mean_squared_error as mse
 
 random.seed(42)
 
-learning_rate = 0.01
-batchSize = 202
-epochs = 100
-w1 = 1000
+epochs = 1000
 
 def readAndWrite(file):
     data = open(file, "r").read()
@@ -71,6 +70,8 @@ class fileRead:
 
         #Removes inevitable empty entry at the last entry
         del dataset[-1]
+        del dataset[-1]
+
         for a in range(len(dataset)):
             del dataset[a][-1]
         return dataset, header
@@ -93,48 +94,206 @@ class fileRead:
                 if b == 1:
                     label.append([self.numCleanup(float(dataset[a][b]))])
                 else:
-                    logit[-1].append(self.numCleanup(float(dataset[a][b])))
+                    logit[-1].append([self.numCleanup(float(dataset[a][b]))])
         return logit, label
 
+class backprop:
+    def __init__(self, lr, lambda1, lambda2):
+        self.lr = lr
+        self.lambda1 = lambda1
+        self.lambda2 = lambda2
+        pass
 
-def createModel(X, w1, w2):
-    W1 = tf.layers.dense(X, units=w1, activation=tf.nn.sigmoid)
-    return tf.layers.dense(W1, units=w2, activation=tf.nn.sigmoid)
+    def apply_gradients(self, weights, change):
+        for x in range(len(change)):
+            for y in range(len(change[x])):
+                change[x][y] *= self.lr
+        weights = weights - change
+        return weights
 
-def runner(f, opt, inputShapy, outShapy, w1, epochs=1, batchSize=202, lr=0.1):
-    max = 0
+    def minimize(self):
+        pass
+
+class BCD:
+    def __init__(self, lr, lambda1, lambda2):
+        self.lr = lr
+        self.lambda1 = lambda1
+        self.lambda2 = lambda2
+
+    def apply_gradients(self, weights, change):
+        for x in range(len(change)):
+            for y in range(len(change[x])):
+                change[x][y] *= self.lr
+        weights = weights - change
+        return weights
+
+    def minimize(self):
+        pass
+
+class ADAM:
+    def __init__(self, lr, beta1, beta2, lambda1, lambda2):
+        self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
+        self.lambda1 = lambda1
+        self.lambda2 = lambda2
+
+    def calcMoment(self, mt, beta1, grad):
+        mt = beta1 * mt + (1-beta1)*grad
+
+    def calcVelocity(self, vt, beta2, grad):
+        vt = beta2 * vt + (1-beta2)*(grad*grad)
+
+    def apply_gradients(self, weights, change):
+        for x in range(len(change)):
+            for y in range(len(change[x])):
+                change[x][y] *= self.lr
+        weights = weights - change
+        return weights
+
+    def minimize(self):
+        pass
+
+class SGD:
+    def __init__(self, lr, lambda1, lambda2):
+        self.lr = lr
+        self.lambda1 = lambda1
+        self.lambda2 = lambda2
+
+    def apply_gradients(self, weights, change):
+        for x in range(len(change)):
+            for y in range(len(change[x])):
+                change[x][y] *= self.lr
+        weights = weights - change
+        return weights
+
+    def minimize(self, loss): #Add operation to minimize loss by updating var_list
+        pass #if we do the minimization here, that means we need to get the weights of the network
+
+def compute_gradient(x, y, w1, w2, n, lambda1, lambda2):
+    W1Change = None
+    W2Change = None
+    x = np.asarray(x)
+    y = np.asarray(y)
+    w1 = np.asarray(w1)
+    w2 = np.asarray(w2)
+    w1t = np.transpose(w1)
+    w2t = np.transpose(w2)
+    for a in range(len(x)):
+        xt = np.transpose(x[a])
+        step11 = (2/n)*(np.matmul(w2t, np.matmul(w2, np.matmul(w1, np.matmul(x[a], xt)))))
+        step21 = (2/n)*(np.matmul(w2t, (xt*y[a])))
+        step31 = 2*lambda1*w1
+
+        step12 = (2/n)*(np.matmul(w2, np.matmul(w1, np.matmul(x[a], np.matmul(xt, w1t)))))
+        step22 = (2/n)*(np.matmul(xt, w1t)*y[a])
+        step32 = 2*lambda2*w2
+
+        W1Change = step11 - step21 + step31
+        W2Change = step12 - step22 + step32
+    return W1Change/len(x), W2Change/len(x)
+
+class LinearNetwork:
+    def __init__(self, config, lambda1, lambda2):
+        self.networkconfig = config
+        self.weights = self.fullyConnectedWeights(config[0], config[1], config[2])
+        self.lambda1, self.lambda2 = lambda1, lambda2
+
+    def fullyConnectedWeights(self, inShape, l1Shape, l2Shape):
+        weights = [[], []]
+        for a in range(l1Shape):
+            weights[0].append([])
+            for b in range(inShape):
+                weights[0][-1].append(0.01)
+
+        for c in range(l2Shape):
+            weights[1].append([])
+            for d in range(l1Shape):
+                weights[1][-1].append(0.01)
+        weights = np.asarray(weights)
+        return weights
+
+    def backprop(self, method, inputy, ans):
+        gradient = compute_gradient(inputy, ans, self.weights[0], self.weights[1], len(inputy), self.lambda1, self.lambda2)
+        self.weights = method.apply_gradients(self.weights, gradient)
+
+    def fit(self, inputy, ans, method):
+        pred = self.forwardpass(inputy)
+        self.backprop(method, inputy, ans)
+        return self.mse(pred, ans)
+
+
+    def predict(self, inputy, ans):
+        prediction = self.forwardpass(inputy)
+        return self.mse(prediction, ans)
+
+    def formula(self, inputy):
+        X1, X2 = None, None
+        output = []
+        for inp in inputy:
+            X1 = self.multiplication(inp, self.weights[0])
+            X2 = self.multiplication(X1, self.weights[1])
+            output.append(X2)
+
+        return output
+
+    def multiplication(self, inputy, weight):
+        inputy = np.asarray(inputy)
+        outy = [0]*len(weight)
+        for x in range(len(weight)): #len of input
+            for y in range(len(weight[x])): #len of weights
+                if len(weight)> 1:
+                    try:
+                        outy[x] += float(weight[x][y])*float(inputy[y][0])
+                    except:
+                        print(np.asarray(weight).shape, np.asarray(inputy).shape)
+
+                else:
+                    outy[x] += float(weight[x][y])*float(inputy[x])
+        return outy
+
+    def forwardpass(self, inputy):
+        return self.formula(inputy)
+
+    def l2norm(self, inputy):
+        sum = 0
+        sum += (inputy)** 2
+        return math.sqrt(sum)
+
+    def frobNorm(self, inputy):
+        sum = 0
+        for inp in inputy:
+            for i in inp:
+                sum += i ** 2
+        return math.sqrt(sum)
+
+    def mse(self, inputy, ans):
+        sum = 0
+        inputy = np.asarray(inputy)
+        ans = np.asarray(ans)
+        for i in range(len(inputy)):
+            sum += mse(inputy[i], ans[i])
+        return sum/len(inputy)
+
+
+def runner(f, epochs=1, batchSize=202, network=LinearNetwork([14, 10, 1], 0.1, 0.2), method=backprop(0.1, 0.1, 0.1)):
     if batchSize < 10: batchSize = 202
-    X = tf.placeholder(dtype=tf.float32, shape=[None, inputShapy], name="Input")
-    Y = tf.placeholder(dtype=tf.float32, shape=[None, 1], name="Output")
-    learningRate = tf.placeholder(dtype=tf.float32)
-    model = createModel(X, w1, outShapy)
-    loss = tf.losses.absolute_difference(model, Y)
-    if opt == "Adam":
-        optimizer = tf.train.AdamOptimizer()
-    else:
-        optimizer = tf.train.GradientDescentOptimizer(lr)
-    train = optimizer.minimize(loss)
-
-    init = tf.global_variables_initializer()
-    sess = tf.Session()
-    sess.run(init)
     for e in range(epochs):
-        corr, tot = 0,0
+        loss = 0.0
         f.shuffleTrain()
         trainLogit, trainLabel = f.trainLogit, f.trainLabel
+        testingLogit, testingLabel = f.testLogit, f.testLabel
         for a in range((202//batchSize)):
-            trainX = trainLogit[a*batchSize: (a+1)*batchSize]
-            trainY = trainLabel[a*batchSize: (a+1)*batchSize]
-            batchLoss, _, pred = sess.run([loss, train, model], feed_dict={X:trainX, Y:trainY, learningRate:lr})
-            for a in range(len(pred)):
-                if abs(round(pred[a][0]) - round(trainY[a][0])) == 2:
-                    corr += 1
-                    tot += 1
-                else:
-                    tot +=1
-        if max <= (corr/tot): max = (corr/tot)
-    return max
-
+            trainX = np.asarray(trainLogit[a*batchSize: (a+1)*batchSize])
+            trainY = np.asarray(trainLabel[a*batchSize: (a+1)*batchSize])
+            batchloss = network.fit(trainX, trainY, method)
+            loss += batchloss
+            #Send the data in, and get the loss out
+            #do the backprob, and lastly return loss
+        loss /= int(202//batchSize)
+        testloss = network.predict(testingLogit, testingLabel)
+    print("Epochs done, average loss is {} for training, and {} for testing".format(loss, testloss))
+    return loss, testloss
 
 # readAndWrite("hw3 - dataset/Bodyfat.csv")
 f = fileRead("this.csv", 0.2)
@@ -144,15 +303,23 @@ def iterator(f):
     adamRun = []
     score = []
     setupHeader = ["LearningRate", "BatchSize", "W1 Size"]
-    lr = [0.1, 0.01, 0.001, 0.0001]
-    batchSize = [10, 50, 202]
-    w1 = [10000, 5000, 1000, 500, 100, 50]
-    for l in lr:
-        for b in batchSize:
+    lr = [0.01, 0.001]
+    batchSize = [10, 50, 200]
+    w1 = [50, 100, 500, 1000]
+    lambda1 = [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95]
+    lambda2 = [0.15, 0.25, 0.35, 0.45, 0.55, 0.65, 0.75, 0.85, 0.95]
+    for l1 in lambda1:
+        for l2 in lambda2:
             for size in w1:
-                setup.append([l, b, size])
-                score.append(runner(f, "notAdam", len(f.trainLogit[0]), 1, size, epochs, b, l))
-                adamRun.append(runner(f, "Adam", len(f.trainLogit[0]), 1, size, epochs, b, 1))
+                for l in lr:
+                    methods = [SGD(l, l1, l2)]
+                    for b in batchSize:
+                        print(b, l, l1, l2, size)
+                        network = LinearNetwork([14, size, 1], l1, l2)
+                        for method in methods:
+                            setup.append([l, b, size, l1, l2, method])
+                            trainLoss, testLoss = runner(f, epochs, b, network, method)
+                            score.append([trainLoss, testLoss])
     return setupHeader, setup, score, adamRun
 
 
@@ -160,190 +327,3 @@ header, setup, score, adam = iterator(f)
 for a in range(len(score)):
     print("{} : {}   -   {} : {}   -   {} : {}".format(header[0], setup[a][0], header[1], setup[a][1], header[2], setup[a][2]))
     print(score[a], adam[a])
-
-
-# f = fileRead("hw3 - dataset/Bodyfat.csv", 0.2)
-# f.shuffleTrain()
-# runner(f, "NotAdam", len(f.trainLogit[0]), 1, w1, epochs, batchSize, learning_rate)
-
-
-# def loss(x, y):
-#     pass
-#     #perform loss calculation using formula(1)
-#
-# class backprop:
-#     def __init__(self, lr, lambda1, lambda2):
-#         self.lr = lr
-#         self.lambda1 = lambda1
-#         self.lambda2 = lambda2
-#         pass
-#
-#     def compute_gradient(self, x, y, w1, w2):
-#         W1Change = None
-#         W2Change = None
-#         for i in range(len(y)):
-#             W1Change += 2*(w2*x[i] - y[i]) + 2*self.lambda1
-#             W2Change += 2*(w1*x[i] - y[i]) + 2*self.lambda2
-#         W1Change = W1Change / len(y)
-#         W2Change = W2Change / len(y)
-#         return W1Change, W2Change
-#
-#     def apply_gradients(self):
-#         # w1 = w1 - W1Change*self.lr
-#         # w2 = w2 - W1Change*self.lr
-#         # return w1, w2
-#         pass
-#
-#
-#
-#     def minimize(self):
-#         pass
-#
-# class BCD:
-#     def __init__(self, lr, lambda1, lambda2):
-#         self.lr = lr
-#         self.lambda1 = lambda1
-#         self.lambda2 = lambda2
-#
-#     def compute_gradient(self, x, y, w1, w2):
-#         W1Change = None
-#         W2Change = None
-#         for i in range(len(y)):
-#             W1Change += 2 * (w2 * x[i] - y[i]) + 2 * self.lambda1
-#             W2Change += 2 * (w1 * x[i] - y[i]) + 2 * self.lambda2
-#         W1Change = W1Change/len(y)
-#         W2Change = W2Change / len(y)
-#         return W1Change, W2Change
-#
-#     def apply_gradients(self):
-#         pass
-#
-#     def minimize(self):
-#         pass
-#
-# class ADAM:
-#     def __init__(self, lr, beta1, beta2, lambda1, lambda2):
-#         self.lr = lr
-#         self.beta1 = beta1
-#         self.beta2 = beta2
-#         self.lambda1 = lambda1
-#         self.lambda2 = lambda2
-#
-#     def calcMoment(self, mt, beta1, grad):
-#         mt = beta1 * mt + (1-beta1)*grad
-#
-#     def calcVelocity(self, vt, beta2, grad):
-#         vt = beta2 * vt + (1-beta2)*(grad*grad)
-#
-#     def compute_gradient(self, x, y, w1, w2):
-#         W1Change = None
-#         W2Change = None
-#         for i in range(len(y)):
-#             W1Change += 2 * (w2 * x[i] - y[i]) + 2 * self.lambda1
-#             W2Change += 2 * (w1 * x[i] - y[i]) + 2 * self.lambda2
-#         return W1Change, W2Change
-#
-#     def apply_gradients(self, output, lrt, mt, vt, epsilon):
-#         output = output - lrt * mt/(math.sqrt(vt)+epsilon)
-#
-#     def minimize(self):
-#         pass
-#
-# class SGD:
-#     def __init__(self, lr, lambda1, lambda2):
-#         self.lr = lr
-#         self.lambda1 = lambda1
-#         self.lambda2 = lambda2
-#
-#     def compute_gradient(self, x, y, w1, w2):
-#         W1Change = 0.0
-#         W2Change = 0.0
-#         for i in range(len(x)):
-#             W1Change += 2 * (w2 * x[i] - y[i]) + 2 * self.lambda1
-#             W2Change += 2 * (w1 * x[i] - y[i]) + 2 * self.lambda2
-#         W1Change = W1Change/len(x)
-#         W2Change = W2Change/len(x)
-#         return W1Change, W2Change
-#
-#     def apply_gradients(self): #another part of minimize, takes gradients and applies them
-#         pass
-#
-#     def minimize(self, loss): #Add operation to minimize loss by updating var_list
-#         pass #if we do the minimization here, that means we need to get the weights of the network
-#
-#
-# class LinearNetwork:
-#     def __init__(self, config, lambda1, lambda2):
-#         self.networkconfig = config
-#         self.weights = self.fullyConnectedWeights(config[0], config[1], config[2])
-#         self.lambda1, self.lambda2 = lambda1, lambda2
-#
-#     def fullyConnectedWeights(self, inShape, l1Shape, l2Shape):
-#         weights = [[], []]
-#         for a in range(l1Shape):
-#             weights[0].append([])
-#             for b in range(inShape):
-#                 weights[0][-1].append(random.random())
-#
-#         for c in range(l2Shape):
-#             weights[1].append([])
-#             for d in range(l1Shape):
-#                 weights[1][-1].append(random.random())
-#
-#         return weights
-#
-#
-#     def fit(self, backprop, input):
-#         pass
-#         #Fit send the data in to the network, and do the activation and such
-#         #then use the backpropagation method, and so on
-#
-#     def predict(self, inputy, ans):
-#         prediction = self.forwardpass(inputy, ans)
-#         return prediction
-#
-#     def formula(self, inputy, weights, ans, lambda1, lambda2):
-#         part1 = 0
-#         for inp in inputy:
-#             X1 = self.multiplication(inputy, weights[0])
-#             X2 = self.multiplication(X1, weights[1])
-#
-#         return X1, X2
-#
-#     def multiplication(self, inputy, weight):
-#         outy = [0]*len(weight)
-#         print(len(inputy), len(weight), len(weight[0]))
-#         for x in range(len(weight)): #len of input
-#             for y in range(len(weight[x])): #len of weights
-#                 if len(weight)> 1:
-#                     outy[x] += float(weight[x][y])*float(inputy[x])
-#                 else:
-#                     outy[x] += float(weight[x][y])*float(inputy[y])
-#         return outy
-#
-#     def forwardpass(self, inputy, ans):
-#         return self.formula(inputy, self.weights, ans, self.lambda1, self.lambda2)
-#
-#     def l2norm(self, inputy, ans):
-#         sum = 0
-#         sum += (inputy - ans) ** 2
-#         return math.sqrt(sum)
-#
-#     def frobNorm(self, inputy):
-#         sum = 0
-#         for inp in inputy:
-#             for i in inp:
-#                 sum += i ** 2
-#         return math.sqrt(sum)
-#
-#
-# #Create an instance of the fileRead class
-# x = fileRead("hw3 - dataset/Bodyfat.csv", 0.2)
-#
-# network = LinearNetwork([14, 10, 1], 0.1, 0.2)
-# weight = network.weights
-# # [print(f, end=", ") for f in x.train[0]]
-# # print()
-# [print(w) for w in weight]
-# X1, X2 = network.formula(x.trainLogit[-1], weight, 0.1, 0.2)
-# print(X2)
